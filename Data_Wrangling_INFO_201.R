@@ -4,7 +4,7 @@ library(stringr)
 library(ggplot2)
 
 #Read in data
-nyc <- read.csv("NYPD_Arrests_Data__Historic__20231030.csv") #Note: df is too large to upload to GitHub so you have to download from: https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
+nyc <- read.csv("NYPD_Arrests_Data__Historic__20231126.csv") #Note: df is too large to upload to GitHub so you have to download from: https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
 air <- read.csv("Air_Quality.csv")
 
 #Remove unnecessary columns
@@ -69,7 +69,7 @@ df <- mutate(df, total_crime=male+female, crime_per_value=total_crime/Data.Value
 #New categorical column that states whether air quality data value is above NAAQS standard & new season var
 df$above_NAAQS_standard <- mapply(NAAQS, df$Name, df$Data.Value)
 df <- mutate(df, start_season=ifelse(season_abb == "S", "Summer", "Winter"))
-  
+
 #Clean up joined df
 df <- arrange(df, start_season)
 df <- rename(df, avg_value=Data.Value, Borough=Geo.Place.Name)
@@ -78,5 +78,4 @@ df <- select(df, -c(Measure, Geo.Type.Name, Time.Period, season_abb))
 #Data summary
 df_grp <- group_by(df, Year, Name, start_season)
 df_summary <- summarize(df_grp, avg_pollution_value=mean(avg_value), total_borough_crime=sum(total_crime))
-
 
