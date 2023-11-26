@@ -4,7 +4,7 @@ library(stringr)
 library(ggplot2)
 
 #Read in data
-nyc <- read.csv("NYPD_Arrests_Data__Historic__20231030.csv")
+nyc <- read.csv("NYPD_Arrests_Data__Historic__20231030.csv") #Note: df is too large to upload to GitHub so you have to download from: https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8h9b-rp9u
 air <- read.csv("Air_Quality.csv")
 
 #Remove unnecessary columns
