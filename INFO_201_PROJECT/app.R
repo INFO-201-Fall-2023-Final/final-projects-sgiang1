@@ -30,9 +30,8 @@ ui <- fluidPage(
           wellPanel(
             p(strong("You can adjust the Year")),
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
-            selectInput(inputId="borough_gender", "Select Gender", c("Male","Female","All"), "All"),
-            selectInput(inputId="borough_age", "Select Age Group", c("<18","18-24", "25-44", "45-64", "65+"), "<18"),
-            selectInput(inputId="borough_type", "Select Type", c("Misdemeanor","Felony","Violation"), "Misdemeanor")
+            selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
+            uiOutput(outputId="type"),
           ),
           wellPanel(
             p(strong("Summary")),
@@ -57,7 +56,8 @@ ui <- fluidPage(
               tabPanel("Population Graph",
                        h4("Population Graph", align="center"),
                        plotlyOutput(outputId="population_bar"),
-                       br()
+                       br(),
+                       DT::dataTableOutput(outputId="population_table")
               )
               
             )
@@ -82,6 +82,12 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
+  output$type <- renderUI({
+    if (input$select_type=="Gender") { selectInput(inputId="borough_gender", "Select Gender", c("Male","Female","All"), "All") }
+    else if (input$select_type=="Age") { selectInput(inputId="borough_age", "Select Age Group", c("<18","18-24", "25-44", "45-64", "65+"), "<18") }
+    else if (input$select_type=="Crime") { selectInput(inputId="borough_type", "Select Crime Type", c("Misdemeanor","Felony","Violation"), "Misdemeanor") }
+  })
+  
   output$borough_choro_map <- renderPlot({
     borough_shape <- st_read("nybb.shp")
     mask <- c()
@@ -90,7 +96,7 @@ server <- function(input, output) {
     if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
     filtered <- filter(df_total_sum, Year==input$borough_year)
     filtered <- filtered[, c("Borough", mask)]
-    borough_df <- merge(fortify(borough_shape), filtered, by.x="BoroName", by.y="Borough", all.x=TRUE)
+    borough_df <- merge(borough_shape, filtered, by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df <- mutate(borough_df, total=rowSums(borough_df[, mask, drop=TRUE]))
     p <- ggplot(fortify(borough_df)) + geom_sf(aes(fill=total)) + scale_fill_gradient(low = "yellow", high = "red") 
     return(p)
@@ -104,7 +110,7 @@ server <- function(input, output) {
     if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
     filtered <- filter(precinct, Year==input$borough_year)
     filtered <- filtered[, c("ARREST_PRECINCT", mask)]
-    precinct_df <- merge(fortify(precinct_shape), filtered, by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
+    precinct_df <- merge(precinct_shape, filtered, by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
     precinct_df <- mutate(precinct_df, total=rowSums(precinct_df[, mask, drop=TRUE]))
     p <- ggplot(fortify(precinct_df)) + geom_sf(aes(fill=total)) + scale_fill_gradient(low = "yellow", high = "red") 
     return(p)
@@ -115,11 +121,26 @@ server <- function(input, output) {
     return(filtered_borough)
   })
   
+  #--------- Population Bar Charts --------------------
+  Gender <- c("Borough","male","female")
+  Age <- c("Borough","X.18","X18.24","X25.44","X45.64","X65.")
+  Crime <- c("Borough","misdemeanor","felony", "violation")
+  
   output$population_bar <- renderPlotly({
     filtered_year <- filter(df_total_sum, Year==input$borough_year)
-    dfm <- melt(filtered_year[, c("Borough","male","female")], id.vars=1)
+    if (input$select_type=="Gender") { dfm <- melt(filtered_year[, c("Borough","male","female")], id.vars=1) }
+    else if (input$select_type=="Age") { dfm <- melt(filtered_year[, c("Borough","X.18","X18.24","X25.44","X45.64","X65.")], id.vars=1) }
+    else if (input$select_type=="Crime") { dfm <- melt(filtered_year[, c("Borough","misdemeanor","felony", "violation")], id.vars=1) }
     p <- ggplot(dfm) + geom_bar(aes(x=Borough, y=value, fill=variable), stat = "identity",position = "dodge")
     return(p)
+  })
+  
+  output$population_table <- renderDataTable({
+    population <- filter(select(df_total_sum, -c("Name")), Year==input$borough_year)
+    if (input$select_type=="Gender") { population <- population[, c("Borough","male","female")] }
+    else if (input$select_type=="Age") { population <- population[, c("Borough","X.18","X18.24","X25.44","X45.64","X65.")]  }
+    else if (input$select_type=="Age") { population <- population[, c("Borough","misdemeanor","felony", "violation")] }
+    return(population)
   })
 }
 
