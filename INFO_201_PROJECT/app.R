@@ -18,12 +18,13 @@ df_total_sum <- summarize(df_total_grp, across(c(3,4,5,6,7,8,9,10,11,12,13,14,15
 ui <- fluidPage(
   navbarPage("NYC Air Pollution and Crime",
              
-    #tab for overview page
+    #------------ Overview tab ---------------
+    
     tabPanel("Overview",
       h1("Overview")
     ),
     
-    #tab for borough crime rate page
+    #---------- Borough crime tab ------------
     tabPanel("Borough crime",
       fluidRow(
         column(4,
@@ -32,6 +33,12 @@ ui <- fluidPage(
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
             selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
             uiOutput(outputId="type"),
+          ),
+          wellPanel(
+            p(strong("How to use filter")),
+            p("placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph
+              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph 
+              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph")
           ),
           wellPanel(
             p(strong("Summary")),
@@ -66,7 +73,8 @@ ui <- fluidPage(
       ),
     ),
     
-    #tab for seasonal air pollutant and crime rate page
+    #------------- Seasonal crime tab -----------------
+    
     tabPanel("Seasonal crime",
     ),
     
@@ -74,7 +82,7 @@ ui <- fluidPage(
     tabPanel("third page",
     ),
     
-    #tab for conclusion page
+    #----------------- Concluson tab ------------------- 
     tabPanel("Conclusion",
              
     )
@@ -82,11 +90,16 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
+  
+  #---------- Selection sidebar ------------
+  
   output$type <- renderUI({
     if (input$select_type=="Gender") { selectInput(inputId="borough_gender", "Select Gender", c("Male","Female","All"), "All") }
     else if (input$select_type=="Age") { selectInput(inputId="borough_age", "Select Age Group", c("<18","18-24", "25-44", "45-64", "65+"), "<18") }
     else if (input$select_type=="Crime") { selectInput(inputId="borough_type", "Select Crime Type", c("Misdemeanor","Felony","Violation"), "Misdemeanor") }
   })
+  
+  #-------- Choropleth Map -----------------
   
   output$borough_choro_map <- renderPlot({
     borough_shape <- st_read("nybb.shp")
@@ -122,9 +135,6 @@ server <- function(input, output) {
   })
   
   #--------- Population Bar Charts --------------------
-  Gender <- c("Borough","male","female")
-  Age <- c("Borough","X.18","X18.24","X25.44","X45.64","X65.")
-  Crime <- c("Borough","misdemeanor","felony", "violation")
   
   output$population_bar <- renderPlotly({
     filtered_year <- filter(df_total_sum, Year==input$borough_year)
