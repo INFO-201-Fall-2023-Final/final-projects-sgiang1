@@ -232,15 +232,16 @@ server <- function(input, output) {
   output$borough_choro_map <- renderPlot({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
-    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label="BoroName")) + scale_fill_gradient(low = "yellow", high = "red") 
+    borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$value)
+    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") 
     return(ggplotly(p, tooltip="label"))
   })
   
   output$precinct_choro_map <- renderPlot({
     precinct_shape <- st_read("nycc.shp")
     precinct_df <- merge(precinct_shape, filt_precinct(), by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
-    precinct_df$info <- c()
-    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label="ARREST_PRECINCT")) + scale_fill_gradient(low = "yellow", high = "red") 
+    precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nValue: ", precinct_df$value)
+    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") 
     return(ggplotly(p, tooltip="label"))
   })
   
