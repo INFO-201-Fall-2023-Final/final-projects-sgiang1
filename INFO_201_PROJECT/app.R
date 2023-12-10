@@ -54,8 +54,8 @@ ui <- fluidPage(
               tabPanel("Borough Map",
                        h4("NYC Borough Map", align="center"),
                        fluidRow(
-                         column(6, plotOutput(outputId="borough_choro_map")),
-                         column(6, plotOutput(outputId="precinct_choro_map"))
+                         column(6, plotlyOutput(outputId="borough_choro_map")),
+                         column(6, plotlyOutput(outputId="precinct_choro_map"))
                        ),
                        br(),
                        DT::dataTableOutput(outputId="borough_map_table")
@@ -177,6 +177,9 @@ server <- function(input, output) {
         map <- final_df[, c("Borough", "violation")]
         map <- rename_at(map, "violation", ~"value")
       }
+    } else {
+      map <- final_df[, c("Borough","male")] 
+      map <- rename_at(map, "male", ~"value")
     }
     return(map)
   })
@@ -225,11 +228,14 @@ server <- function(input, output) {
         m <- end_df[, c("ARREST_PRECINCT", "violation")]
         m <- rename_at(m, "violation", ~"value")
       }
+    } else {
+      m <- end_df[, c("ARREST_PRECINCT","male")] 
+      m <- rename_at(m, "male", ~"value")
     }
     return(m)
   })
     
-  output$borough_choro_map <- renderPlot({
+  output$borough_choro_map <- renderPlotly({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$value)
@@ -237,7 +243,7 @@ server <- function(input, output) {
     return(ggplotly(p, tooltip="label"))
   })
   
-  output$precinct_choro_map <- renderPlot({
+  output$precinct_choro_map <- renderPlotly({
     precinct_shape <- st_read("nycc.shp")
     precinct_df <- merge(precinct_shape, filt_precinct(), by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
     precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nValue: ", precinct_df$value)
