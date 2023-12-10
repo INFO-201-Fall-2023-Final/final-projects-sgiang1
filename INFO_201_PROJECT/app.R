@@ -130,21 +130,118 @@ server <- function(input, output) {
   
   #-------- Choropleth Map -----------------
   
+  filt_borough <- reactive({
+    df <- read.csv("df.csv")
+    final <- filter(df, Name=="Fine Particulate Matter (PM2.5)")
+    final_grp <- group_by(final, Year, Borough, Name) 
+    final_df <- summarize(final_grp, across(c(3,4,5,6,7,8,9,10,11,12,13,14,15,16,17), sum))
+    final_df <- filter(final_df, Year==input$borough_year)
+    if (input$select_type=="Gender") { 
+      if (input$borough_gender=="Male") { 
+        map <- final_df[, c("Borough","male")] 
+        map <- rename_at(map, "male", ~"value")
+      } else if (input$borough_gender=="Female") { 
+        map <- final_df[, c("Borough","female")] 
+        map <- rename_at(map, "female", ~"value")
+      } else if (input$borough_gender=="All") { 
+        final_df$value <- rowSums(final_df[, c("male","female")])
+        map <- final_df[, c("Borough","value")]
+      }
+    }
+    else if (input$select_type=="Age") { 
+      if (input$borough_age=="<18") { 
+        map <- final_df[, c("Borough", "X.18")]
+        map <- rename_at(map, "X.18", ~"value")
+      } else if (input$borough_age=="18-24") { 
+        map <- final_df[, c("Borough", "X18.24")]
+        map <- rename_at(map, "X18.24", ~"value")
+      } else if (input$borough_age=="25-44") { 
+        map <- final_df[, c("Borough", "X25.44")]
+        map <- rename_at(map, "X25.44", ~"value")
+      } else if (input$borough_age=="45-64") { 
+        map <- final_df[, c("Borough", "X45.64")]
+        map <- rename_at(map, "X45.64", ~"value")
+      } else if (input$borough_age=="65+") { 
+        map <- final_df[, c("Borough", "X65.")]
+        map <- rename_at(map, "X65.", ~"value")
+      }
+    }
+    else if (input$select_type=="Crime") { 
+      if (input$borough_type=="Misdemeanor") {
+        map <- final_df[, c("Borough", "misdemeanor")]
+        map <- rename_at(map, "misdemeanor", ~"value")
+      } else if (input$borough_type=="Felony") {
+        map <- final_df[, c("Borough", "felony")]
+        map <- rename_at(map, "felony", ~"value")
+      } else if (input$borough_type=="Violation") {
+        map <- final_df[, c("Borough", "violation")]
+        map <- rename_at(map, "violation", ~"value")
+      }
+    }
+    return(map)
+  })
+  
+  filt_precinct <- reactive({
+    end <- read.csv("precinct_graph.csv")
+    end_df <- filter(end, Year==input$borough_year)
+    if (input$select_type=="Gender") { 
+      if (input$borough_gender=="Male") { 
+        m <- end_df[, c("ARREST_PRECINCT","male")] 
+        m <- rename_at(m, "male", ~"value")
+      } else if (input$borough_gender=="Female") { 
+        m <- end_df[, c("ARREST_PRECINCT","female")] 
+        m <- rename_at(m, "female", ~"value")
+      } else if (input$borough_gender=="All") { 
+        end_df$value <- rowSums(end_df[, c("male","female")])
+        m <- end_df[, c("ARREST_PRECINCT","value")]
+      }
+    }
+    else if (input$select_type=="Age") { 
+      if (input$borough_age=="<18") { 
+        m <- end_df[, c("ARREST_PRECINCT", "X.18")]
+        m <- rename_at(m, "X.18", ~"value")
+      } else if (input$borough_age=="18-24") { 
+        m <- end_df[, c("ARREST_PRECINCT", "X18.24")]
+        m <- rename_at(m, "X18.24", ~"value")
+      } else if (input$borough_age=="25-44") { 
+        m <- end_df[, c("ARREST_PRECINCT", "X25.44")]
+        m <- rename_at(m, "X25.44", ~"value")
+      } else if (input$borough_age=="45-64") { 
+        m <- end_df[, c("ARREST_PRECINCT", "X45.64")]
+        m <- rename_at(m, "X45.64", ~"value")
+      } else if (input$borough_age=="65+") { 
+        m <- end_df[, c("ARREST_PRECINCT", "X65.")]
+        m <- rename_at(m, "X65.", ~"value")
+      }
+    }
+    else if (input$select_type=="Crime") { 
+      if (input$borough_type=="Misdemeanor") {
+        m <- end_df[, c("ARREST_PRECINCT", "misdemeanor")]
+        m <- rename_at(m, "misdemeanor", ~"value")
+      } else if (input$borough_type=="Felony") {
+        m <- end_df[, c("ARREST_PRECINCT", "felony")]
+        m <- rename_at(m, "felony", ~"value")
+      } else if (input$borough_type=="Violation") {
+        m <- end_df[, c("ARREST_PRECINCT", "violation")]
+        m <- rename_at(m, "violation", ~"value")
+      }
+    }
+    return(m)
+  })
+    
   output$borough_choro_map <- renderPlot({
     borough_shape <- st_read("nybb.shp")
-    mask <- c()
-    if (input$borough_gender=="Male") { mask <- c(mask, "male")}
-    else if (input$borough_gender=="Female") { mask <- c(mask, "female") }
-    else if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
-    else if (input$borough_type=="Misdemeanor") { mask <- c(mask, "misdemeanor") }
-    else if (input$borough_type=="Felony") { mask <- c(mask, "felony") }
-    else if (input$borough_type=="Violation") { mask <- c(mask, "misdemeanor") }
-    filtered <- filter(df_total_sum, Year==input$borough_year)
-    filtered <- filtered[, c("Borough", mask)]
-    borough_df <- merge(borough_shape, filtered, by.x="BoroName", by.y="Borough", all.x=TRUE)
-    borough_df <- mutate(borough_df, total=rowSums(borough_df[, c(mask, ), drop=TRUE]))
-    p <- ggplot(fortify(borough_df)) + geom_sf(aes(fill=total)) + scale_fill_gradient(low = "yellow", high = "red") 
-    return(ggplotly(p))
+    borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
+    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label="BoroName")) + scale_fill_gradient(low = "yellow", high = "red") 
+    return(ggplotly(p, tooltip="label"))
+  })
+  
+  output$precinct_choro_map <- renderPlot({
+    precinct_shape <- st_read("nycc.shp")
+    precinct_df <- merge(precinct_shape, filt_precinct(), by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
+    precinct_df$info <- c()
+    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label="ARREST_PRECINCT")) + scale_fill_gradient(low = "yellow", high = "red") 
+    return(ggplotly(p, tooltip="label"))
   })
   
   precinct_in_borough <- reactive({
