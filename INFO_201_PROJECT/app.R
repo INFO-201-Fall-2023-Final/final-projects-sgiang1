@@ -29,10 +29,10 @@ ui <- fluidPage(
       fluidRow(
         column(4,
           wellPanel(
-            p(strong("You can adjust the Year")),
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
             selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
             uiOutput(outputId="type"),
+            selectInput(inputId="select_borough", "Select Borough", c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Bronx")
           ),
           wellPanel(
             p(strong("How to use filter")),
@@ -76,9 +76,38 @@ ui <- fluidPage(
     #------------- Seasonal crime tab -----------------
     
     tabPanel("Seasonal crime",
+      fluidRow(
+        column(3,
+          wellPanel(
+            selectInput(inputId="selected_borough", "Select Boroughs to include", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
+            selectInput(inputId="selected_pollutant", "Select pollutant to include", multiple=TRUE, choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)")),
+            selectInput(inputId="selected_crime", "Select crime type to include", multiple=TRUE, choices=c("misdemeanor","felony","violation"), selected=c("misdemeanor","felony","violation"))
+          ),
+          wellPanel(
+            p(strong("How to use filters"))
+          ),
+          wellPanel(
+            p(strong("Summary"))
+          )
+        ),
+        column(9,
+          wellPanel(
+            tabsetPanel(
+              tabPanel("Pollutant trend",
+                plotlyOutput(outputId="summer_line"),
+               plotlyOutput(outputId="winter_line") 
+              ),
+              tabPanel("Scatterplot",
+                plotlyOutput(outputId="season_scatter")
+              )
+            ) 
+          )
+        )
+      )
     ),
     
-    #tab for
+    #---------------Third gage tab --------------------
+    
     tabPanel("third page",
     ),
     
@@ -105,32 +134,33 @@ server <- function(input, output) {
     borough_shape <- st_read("nybb.shp")
     mask <- c()
     if (input$borough_gender=="Male") { mask <- c(mask, "male")}
-    if (input$borough_gender=="Female") { mask <- c(mask, "female") }
-    if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
+    else if (input$borough_gender=="Female") { mask <- c(mask, "female") }
+    else if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
+    else if (input$borough_type=="Misdemeanor") { mask <- c(mask, "misdemeanor") }
+    else if (input$borough_type=="Felony") { mask <- c(mask, "felony") }
+    else if (input$borough_type=="Violation") { mask <- c(mask, "misdemeanor") }
     filtered <- filter(df_total_sum, Year==input$borough_year)
     filtered <- filtered[, c("Borough", mask)]
     borough_df <- merge(borough_shape, filtered, by.x="BoroName", by.y="Borough", all.x=TRUE)
-    borough_df <- mutate(borough_df, total=rowSums(borough_df[, mask, drop=TRUE]))
+    borough_df <- mutate(borough_df, total=rowSums(borough_df[, c(mask, ), drop=TRUE]))
     p <- ggplot(fortify(borough_df)) + geom_sf(aes(fill=total)) + scale_fill_gradient(low = "yellow", high = "red") 
-    return(p)
+    return(ggplotly(p))
   })
   
-  output$precinct_choro_map <- renderPlot({
-    precinct_shape <- st_read("nycc.shp")
+  precinct_in_borough <- reactive({
     mask <- c()
-    if (input$borough_gender=="Male") { mask <- c(mask, "male")}
-    if (input$borough_gender=="Female") { mask <- c(mask, "female") }
-    if (input$borough_gender=="all") { mask <- c(mask, "male", "female")}
-    filtered <- filter(precinct, Year==input$borough_year)
-    filtered <- filtered[, c("ARREST_PRECINCT", mask)]
-    precinct_df <- merge(precinct_shape, filtered, by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
-    precinct_df <- mutate(precinct_df, total=rowSums(precinct_df[, mask, drop=TRUE]))
-    p <- ggplot(fortify(precinct_df)) + geom_sf(aes(fill=total)) + scale_fill_gradient(low = "yellow", high = "red") 
-    return(p)
+    if (input$select_borough=="Bronx") { mask <- 40:52 }
+    if (input$select_borough=="Queens") { mask <- 100:115 }
+    if (input$select_borough=="Staten Island") { mask <- 120:123 }
+    if (input$select_borough=="Brooklyn") { mask <- 60:94 }
+    if (input$select_borough=="Manhattan") { mask <- 1:34 }
+    return(mask)
   })
   
   output$borough_map_table <- renderDataTable({
-    filtered_borough <- filter(select(df_total_sum, -c("Name")), Year==input$borough_year)
+    filtered_borough <- filter(precinct, Year==input$borough_year, ARREST_PRECINCT%in%precinct_in_borough())
+    filtered_borough <- rename_at(filtered_borough, "ARREST_PRECINCT", ~"Precinct")
+    filtered_borough <- select(filtered_borough, -c("Year", "drug_use", "larceny", "DUI", "assault", "total_crime"))
     return(filtered_borough)
   })
   
@@ -141,7 +171,7 @@ server <- function(input, output) {
     if (input$select_type=="Gender") { dfm <- melt(filtered_year[, c("Borough","male","female")], id.vars=1) }
     else if (input$select_type=="Age") { dfm <- melt(filtered_year[, c("Borough","X.18","X18.24","X25.44","X45.64","X65.")], id.vars=1) }
     else if (input$select_type=="Crime") { dfm <- melt(filtered_year[, c("Borough","misdemeanor","felony", "violation")], id.vars=1) }
-    p <- ggplot(dfm) + geom_bar(aes(x=Borough, y=value, fill=variable), stat = "identity",position = "dodge")
+    p <- ggplot(dfm) + geom_bar(aes(x=Borough, y=value, fill=variable), stat = "identity",position = "dodge") + ylim(0, 100000)
     return(p)
   })
   
@@ -149,9 +179,49 @@ server <- function(input, output) {
     population <- filter(select(df_total_sum, -c("Name")), Year==input$borough_year)
     if (input$select_type=="Gender") { population <- population[, c("Borough","male","female")] }
     else if (input$select_type=="Age") { population <- population[, c("Borough","X.18","X18.24","X25.44","X45.64","X65.")]  }
-    else if (input$select_type=="Age") { population <- population[, c("Borough","misdemeanor","felony", "violation")] }
+    else if (input$select_type=="Crime") { population <- population[, c("Borough","misdemeanor","felony", "violation")] }
     return(population)
   })
+  
+  #----------- Season Line Graphs --------------------
+  
+  summer_borough_data <- reactive({
+    data <- melt(filter(df, Borough==input$selected_borough, start_season=="Summer")[, c("Borough", "Year", "Name", "avg_value", "misdemeanor", "felony", "violation")], id.vars=c(1,2,3,4))
+    data <- filter(data, Name%in%input$selected_pollutant, variable%in%input$selected_crime) 
+    return(data)
+  })
+  
+  winter_borough_data <- reactive({
+    data <- melt(filter(df, Borough==input$selected_borough, start_season=="Winter")[, c("Borough", "Year", "Name", "avg_value", "misdemeanor", "felony", "violation")], id.vars=c(1,2,3,4))
+    data <- filter(data, Name%in%input$selected_pollutant)    
+    return(data)
+  })
+
+  output$summer_line <- renderPlotly({
+    p <- ggplot(summer_borough_data(), aes(x=Year, y=avg_value, col=Name)) + geom_line()
+    p <- p + geom_line(data=summer_borough_data(), mapping=aes(x=Year, y=value/1000, col=variable)) + ylim(0, 42) +
+      labs(x="Year of Season", y="Avgerage Value", title="Summer")
+    return(ggplotly(p))
+  })
+  
+  output$winter_line <- renderPlotly({
+    p <- ggplot(winter_borough_data(), aes(x=Year, y=avg_value, col=Name)) + geom_line()
+    p <- p + geom_line(data=winter_borough_data(), mapping=aes(x=Year, y=value/1000, col=variable)) + ylim(0, 42) +
+      labs(x="Year of Season", y="Average Value", title="Winter")
+    return(ggplotly(p))
+  })
+  
+  #----------- Season Scatterplot ------------
+
+  output$season_scatter <- renderPlotly({
+    p <- ggplot() + geom_point(data=filter(summer_borough_data(), variable=="misdemeanor", Name==input$selected_pollutant[1]), mapping=aes(x=avg_value, y=value), color="orange") + 
+      geom_smooth(data=filter(summer_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), aes(x=avg_value, y=value), fill="red", colour="red", size=0.5) +
+      geom_point(data=filter(winter_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), mapping=aes(x=avg_value, y=value), color="skyblue") + 
+      geom_smooth(data=filter(winter_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), aes(x=avg_value, y=value), fill="blue", colour="blue", size=0.5) +
+      labs(x="Average annual pollutant value (ppm)", y="Number of crime Seasonally")
+    return(ggplotly(p))
+  })
 }
+  
 
 shinyApp(ui = ui, server = server)
