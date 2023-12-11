@@ -21,18 +21,24 @@ ui <- fluidPage(
     #------------ Overview tab ---------------
     
     tabPanel("Overview",
-      h1("Overview"),
-      p("Our data analysis compares crime statistics to air quality reports by borough in New York City between 2010 and 2023. 
-
-With this analysis, we plan to evaluate different metrics and present findings related to: 
-The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes
-The air quality seen in each borough at a given time, determined using the proportions of pollutants such as Nitrogen Dioxide, Ozone, and fine particulate matter collected
-Correlations between air quality and crime metrics in a given borough and year
-Comparisons between proportions of air pollutants and prevalences of felony and misdemeanor crimes in a given borough to city-wide averages
-
-With this data, we plan to gain a better understanding of the potential interplay between crime rates and air quality in different New York City boroughs. Despite it being well-understood that people's actions in a community are greatly influenced by their environment, there is more work to be done in understanding which environmental factors are correlated with higher indexes of crime metrics in a given area. Our aim is to shed light on any discernible patterns, correlations, or anomalies that may exist, providing key insights into the complex relationship between urban environmental factors and crime dynamics. Through our examination of crime types, yearly trends, air quality metrics, and their potential connections between 2010 and 2020, we aim to contribute to a deeper understanding of the multifaceted factors influencing public safety and environmental well-being in our city.
-"),
-      
+      h1("Data Anaylsis of NYC Air Quality and Crime Data"),
+      h2("Our data analysis compares crime statistics to air quality reports by borough in New York City between 2009 and 2020."),
+      br(),
+      h4("With this analysis, we plan to evaluate different metrics and present findings related to:"),
+      p("- The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes"),
+      p("- The air quality seen in each borough at a given time, determined using the proportions of pollutants such as Nitrogen Dioxide, Ozone, and fine particulate matter collected"),
+      p("- Correlations between air quality and crime metrics in a given borough and year"),
+      p("- Comparisons between proportions of air pollutants and prevalences of felony and misdemeanor crimes in a given borough to city-wide averages"),
+      p("- The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes"),
+      br(),
+      h4("With this data, we plan to gain a better understanding of the potential interplay between crime rates and air quality in 
+        different New York City boroughs. Despite it being well-understood that people's actions in a community are greatly influenced 
+        by their environment, there is more work to be done in understanding which environmental factors are correlated with higher indexes 
+        of crime metrics in a given area."),
+      h4("Our aim is to shed light on any discernible patterns, correlations, or anomalies that may exist, 
+        providing key insights into the complex relationship between urban environmental factors and crime dynamics. Through our examination 
+        of crime types, yearly trends, air quality metrics, and their potential connections between 2010 and 2020, we aim to contribute to a 
+        deeper understanding of the multifaceted factors influencing public safety and environmental well-being in our city."),
       br(),
       img(src="nyc_skyline.jpeg", height="525", width="1530")
     ),
