@@ -21,7 +21,20 @@ ui <- fluidPage(
     #------------ Overview tab ---------------
     
     tabPanel("Overview",
-      h1("Overview")
+      h1("Overview"),
+      p("Our data analysis compares crime statistics to air quality reports by borough in New York City between 2010 and 2023. 
+
+With this analysis, we plan to evaluate different metrics and present findings related to: 
+The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes
+The air quality seen in each borough at a given time, determined using the proportions of pollutants such as Nitrogen Dioxide, Ozone, and fine particulate matter collected
+Correlations between air quality and crime metrics in a given borough and year
+Comparisons between proportions of air pollutants and prevalences of felony and misdemeanor crimes in a given borough to city-wide averages
+
+With this data, we plan to gain a better understanding of the potential interplay between crime rates and air quality in different New York City boroughs. Despite it being well-understood that people's actions in a community are greatly influenced by their environment, there is more work to be done in understanding which environmental factors are correlated with higher indexes of crime metrics in a given area. Our aim is to shed light on any discernible patterns, correlations, or anomalies that may exist, providing key insights into the complex relationship between urban environmental factors and crime dynamics. Through our examination of crime types, yearly trends, air quality metrics, and their potential connections between 2010 and 2020, we aim to contribute to a deeper understanding of the multifaceted factors influencing public safety and environmental well-being in our city.
+"),
+      
+      br(),
+      img(src="nyc_skyline.jpeg", height="525", width="1530")
     ),
     
     #---------- Borough crime tab ------------
@@ -36,9 +49,12 @@ ui <- fluidPage(
           ),
           wellPanel(
             p(strong("How to use filter")),
-            p("placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph
-              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph 
-              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph")
+            helpText("Using the slider and selection menus you can", strong(code("filter")), "the crime statistic shown on the map based on the year of observation and demographic of criminal by",
+            strong(code("Gender")), ",", strong(code("Age")), "," , strong(code("Crime Type")), ". ", "You may also", strong(code("hover")), "and", strong(code("zoom in")),
+            "over the map to see specific statistic for each particular Precinct and Borough providing you insight on where different types of crime generally occur and the frequency of it. The table
+            at the bottom is reactive basedd on the last select menu where you can display data for each Precicnt that is within the Borough you selected. Lastly on the population graph
+            tabpanel you can futher compare the crime statistic of each Borough filtering by the same", strong(code("Year")), ",", strong(code("Gender")), ",", strong(code("Age")), ", and," , strong(code("Crime")),
+            "using the same controls")
           ),
           wellPanel(
             p(strong("Summary")),
@@ -54,8 +70,8 @@ ui <- fluidPage(
               tabPanel("Borough Map",
                        h4("NYC Borough Map", align="center"),
                        fluidRow(
-                         column(6, plotlyOutput(outputId="borough_choro_map")),
-                         column(6, plotlyOutput(outputId="precinct_choro_map"))
+                         column(6, plotlyOutput(outputId="precinct_choro_map")),
+                         column(6, plotlyOutput(outputId="borough_choro_map"))
                        ),
                        br(),
                        DT::dataTableOutput(outputId="borough_map_table")
@@ -95,10 +111,11 @@ ui <- fluidPage(
             tabsetPanel(
               tabPanel("Pollutant trend",
                 plotlyOutput(outputId="summer_line"),
-               plotlyOutput(outputId="winter_line") 
+                plotlyOutput(outputId="winter_line") 
               ),
               tabPanel("Scatterplot",
-                plotlyOutput(outputId="season_scatter")
+                plotlyOutput(outputId="season_scatter"),
+                DT::dataTableOutput(outputId="season_table")
               )
             ) 
           )
@@ -106,15 +123,44 @@ ui <- fluidPage(
       )
     ),
     
-    #---------------Third gage tab --------------------
+    #--------------- Comparing Borough Mean tab --------------------
     
-    tabPanel("third page",
+    tabPanel("Comparing Mean",
+      fluidRow(
+        column(4,
+          wellPanel(
+          ),
+          wellPanel(
+            p(strong("How to use filters"))
+          ),
+          wellPanel(
+            p(strong("Summary"))
+          )
+        ),
+        column(8,
+          wellPanel(
+            tabsetPanel(
+              tabPanel("Mean Bar",
+                plotlyOutput(outputId="mean_bar")
+              ),
+              tabPanel("Median Violin Plot",
+                plotlyOutput(outputId="median_violin")
+              )
+            )
+          )
+        )
+      )
     ),
     
     #----------------- Concluson tab ------------------- 
     tabPanel("Conclusion",
-             
-    )
+      
+    ),
+    
+    #------------------- HTML style ---------------------
+    
+    tags$head(tags$style(HTML('.navbar-default .navbar-brand {background-color: #ffb200; color: #FFFFFF}; font-family: Arial;}')))
+    
   )
 )
 
@@ -239,7 +285,7 @@ server <- function(input, output) {
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$value)
-    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") 
+    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red")
     return(ggplotly(p, tooltip="label"))
   })
   
@@ -275,7 +321,7 @@ server <- function(input, output) {
     if (input$select_type=="Gender") { dfm <- melt(filtered_year[, c("Borough","male","female")], id.vars=1) }
     else if (input$select_type=="Age") { dfm <- melt(filtered_year[, c("Borough","X.18","X18.24","X25.44","X45.64","X65.")], id.vars=1) }
     else if (input$select_type=="Crime") { dfm <- melt(filtered_year[, c("Borough","misdemeanor","felony", "violation")], id.vars=1) }
-    p <- ggplot(dfm) + geom_bar(aes(x=Borough, y=value, fill=variable), stat = "identity",position = "dodge") + ylim(0, 100000)
+    p <- ggplot(dfm) + geom_bar(aes(x=Borough, y=value, fill=variable), stat = "identity",position = "dodge") + ylim(0, 100000) + labs(y="Crimes", fill=input$select_type)
     return(p)
   })
   
@@ -304,28 +350,34 @@ server <- function(input, output) {
   output$summer_line <- renderPlotly({
     p <- ggplot(summer_borough_data(), aes(x=Year, y=avg_value, col=Name)) + geom_line()
     p <- p + geom_line(data=summer_borough_data(), mapping=aes(x=Year, y=value/1000, col=variable)) + ylim(0, 42) +
-      labs(x="Year of Season", y="Avgerage Value", title="Summer")
+      labs(x="Year of Season", y="Avgerage Value", title="Summer Pollutant Trend")
     return(ggplotly(p))
   })
   
   output$winter_line <- renderPlotly({
     p <- ggplot(winter_borough_data(), aes(x=Year, y=avg_value, col=Name)) + geom_line()
     p <- p + geom_line(data=winter_borough_data(), mapping=aes(x=Year, y=value/1000, col=variable)) + ylim(0, 42) +
-      labs(x="Year of Season", y="Average Value", title="Winter")
+      labs(x="Year of Season", y="Average Value", title="Winter Pollutant Trend")
     return(ggplotly(p))
   })
   
   #----------- Season Scatterplot ------------
 
   output$season_scatter <- renderPlotly({
-    p <- ggplot() + geom_point(data=filter(summer_borough_data(), variable=="misdemeanor", Name==input$selected_pollutant[1]), mapping=aes(x=avg_value, y=value), color="orange") + 
+    p <- ggplot() + geom_point(data=filter(summer_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), mapping=aes(x=avg_value, y=value), color="orange") + 
       geom_smooth(data=filter(summer_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), aes(x=avg_value, y=value), fill="red", colour="red", size=0.5) +
       geom_point(data=filter(winter_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), mapping=aes(x=avg_value, y=value), color="skyblue") + 
       geom_smooth(data=filter(winter_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), aes(x=avg_value, y=value), fill="blue", colour="blue", size=0.5) +
-      labs(x="Average annual pollutant value (ppm)", y="Number of crime Seasonally")
+      labs(x="Average annual pollutant value (ppm)", y="Number of crime Seasonally", title="Summer vs Winter Scatterplot")
     return(ggplotly(p))
   })
+  
+  output$season_table <- renderDataTable({
+    arrange(rbind(filter(summer_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1]), filter(winter_borough_data(), variable==input$selected_crime[1], Name==input$selected_pollutant[1])), value)
+  })
 }
+
+#
   
 
 shinyApp(ui = ui, server = server)
