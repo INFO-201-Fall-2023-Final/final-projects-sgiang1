@@ -48,7 +48,12 @@ ui <- fluidPage(
       fluidRow(
         column(4,
           wellPanel(
-            p(strong("Data Story - why is it important?"))
+            p(strong("Data Story - why is it important?")),
+            p("With the arrest data filtered by various specifications, we can get a better look
+              at what types of people are ususally arrested, where they are arrested, what types of arrests
+              are happening in a given area at a given time, and the nature of common arrests. When considering
+              the air qualities in these same precincts and boroughs, comparisons can 
+              be made to air quality in a given area and the metrics found in these models")
           ),
           wellPanel(
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
@@ -140,23 +145,39 @@ ui <- fluidPage(
     
     tabPanel("Seasonal crime",
       fluidRow(
-        column(3,
+        column(4,
           wellPanel(
-            p(strong("Data Story - why is it important?"))
+            p(strong("Data Story - why is it important?")),
+            p("Finally, we can gain more insight on the data by seperating it into Summer and Winter seasons. 
+              By doing so we can look deeper into whether or not the positive correlation between crime and air 
+              pollutant continues even with different warm/cold weathers. This is important as it let us to better 
+              have an picture of what the correlation between crime and air pollution is like, if it is generally more
+              polluted and dangerous during the winters, and it will also allows law enforcement agencies and policymakers better allocate resources and plan for the future to crime 
+              rates by knowing when most likely occurs")
           ),
           wellPanel(
-            selectInput(inputId="selected_borough", "Select Boroughs to include", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
+            selectInput(inputId="selected_borough", "Select Borough", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
             selectInput(inputId="selected_pollutant", "Select pollutant to include", multiple=TRUE, choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)")),
             selectInput(inputId="selected_crime", "Select crime type to include", multiple=TRUE, choices=c("misdemeanor","felony","violation"), selected=c("misdemeanor","felony","violation"))
           ),
           wellPanel(
-            p(strong("How to use filters"))
+            p(strong("How to use filters")),
+            helpText("Using the", code("Select Borough"), "dropdown box, you may select the particular Borough you want to display data for. Then, by clicking the pollutant names in", 
+              code("Select pollutant to include"), ", press backspace to remove the pollutant from the graph or re-add the pollutant by pressing on it again. You may also do the same with the",
+              code("Select crime type to include"), "box to choose which crime type in order to compare and contrast it with the trends of the pollutant lines over time. To use the scatterplot panel, 
+              you may remove all selection in both the", code("Select pollutant"), "and", code("Select crime"), "box and re-add one type from each to include. Through the plot you may see trends 
+              of those two types with the help of the best fit estimation line")
           ),
           wellPanel(
-            p(strong("Summary"))
+            p(strong("Summary")),
+            p("Taking a look at the line graphs, we see no significant differences of values for both crime rate and pollutant ammount between both summer trend and winter trends.  However, we noted that
+            in both summer and winter, the pollutant and crime value seem to follow a downward trend as time goes on. Moreover, we found that the peaks and valleys of the misdemeanor line, in particular,
+            seem to follow the ones for the pollutants, PM2.5 in particular, fairly closely, indicating some sort of positive correlation between air pollution and crime rates in both the summer and winte
+            r seasons. Laslty, in looking at the scatter plot, particularly with PM2.5 and misdemeanor data from the bronx, we yet again see a positive correlation along with the similarity of values between
+            both seasons, indicating no significant differences in seasonal crime and pollution")
           )
         ),
-        column(9,
+        column(8,
           wellPanel(
             tabsetPanel(
               tabPanel("Pollutant trend",
@@ -364,7 +385,7 @@ server <- function(input, output) {
   
   winter_borough_data <- reactive({
     data <- melt(filter(df, Borough==input$selected_borough, start_season=="Winter")[, c("Borough", "Year", "Name", "avg_value", "misdemeanor", "felony", "violation")], id.vars=c(1,2,3,4))
-    data <- filter(data, Name%in%input$selected_pollutant)    
+    data <- filter(data, Name%in%input$selected_pollutant, variable%in%input$selected_crime)    
     return(data)
   })
 
