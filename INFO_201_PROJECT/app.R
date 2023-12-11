@@ -23,7 +23,7 @@ ui <- fluidPage(
              
              tabPanel("Overview",
                       h1(strong("Data Anaylsis of NYC Air Quality and Crime Data")),
-                      h2("Our data analysis compares crime statistics to air quality reports by borough in New York City between 2009 and 2020."),
+                      h2("Our data analysis compares crime statistics to air quality reports of Boroughs in New York City from 2009 to 2020."),
                       br(),
                       h4("With this analysis, we plan to evaluate different metrics and present findings related to:"),
                       p("- The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes"),
@@ -32,7 +32,7 @@ ui <- fluidPage(
                       p("- Comparisons between proportions of air pollutants and prevalences of felony and misdemeanor crimes in a given borough to city-wide averages"),
                       p("- The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes"),
                       br(),
-                      h4("We plan to gain a better understanding of the potential interplay between crime rates and air quality in 
+                      h4("With this data, we plan to gain a better understanding of the potential interplay between crime rates and air quality in 
         different New York City boroughs. Despite it being well-understood that people's actions in a community are greatly influenced 
         by their environment, there is more work to be done in understanding which environmental factors are correlated with higher indexes 
         of crime metrics in a given area. Our aim is to shed light on any discernible patterns, correlations, or anomalies that may exist, 
@@ -43,51 +43,60 @@ ui <- fluidPage(
                       img(src="nyc_skyline.jpeg", height="auto", width="100%")
              ),
              
-             #---------- Arrests By Filter Tab ------------
+             #---------- Borough crime tab ------------
              
-             tabPanel("Arrests By Filter",
+             tabPanel("Borough crime",
                       fluidRow(
                         column(4,
                                wellPanel(
-                                 p(strong("Data Story - why this is important?")),
+                                 p(strong("Data Story - why is it important?")),
                                  p("With the arrest data filtered by various specifications, we can get a better look
               at what types of people are ususally arrested, where they are arrested, what types of arrests
-              are happening in a given area at a given time, and the nature of common arrests."),
-                                 p("When considering the air qualities in these same precincts and boroughs, 
-                                 viewers can determine which areas have issues with specific crimes, find out how long these issues have
-                                 been persisting, and comparisons can later be made between environmental factors in a given area and the metrics found in these models.")
+              are happening in a given area at a given time, and the nature of common arrests. When considering
+              the air qualities in these same precincts and boroughs, comparisons can 
+              be made to air quality in a given area and the metrics found in these models")
                                ),
                                wellPanel(
-                                 sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2020, sep=""),
-                                 selectInput(inputId="select_type", "Select Type of Information to Filter", c("Gender", "Age", "Crime"), "Gender"),
+                                 sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
+                                 selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
                                  uiOutput(outputId="type"),
+                                 selectInput(inputId="select_borough", "Select Borough", c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Bronx")
                                ),
                                wellPanel(
-                                 p(strong("How to use the Filter")),
-                                 helpText("The slider and buttons above allow you to find the prevalence of arrests in each precinct
-                     and borough that fit the given filters. Selecting ", strong(code("Gender > All")), "allows
-                     you to see data for every group in that given year. If you wanted to find only the data for
-                     only misdemeanors in 2016, you could select ", strong(code("Crime > Misdemeanor")), " on the
-                     filter panel and ", strong(code("2016")), " on the slider."),
-                                 helpText("Please note that the dataset is pretty large, so it may take a few seconds to retrieve the data.
-                     Give it some time!")
+                                 p(strong("How to use filter")),
+                                 helpText("Using the slider and selection menus you can", strong(code("filter")), "the crime statistic shown on the map based on the year of observation and demographic of criminal by",
+                                          strong(code("Gender")), ",", strong(code("Age")), "," , strong(code("Crime Type")), ". ", "You may also", strong(code("hover")), "and", strong(code("zoom in")),
+                                          "over the map to see specific statistic for each particular Precinct and Borough providing you insight on where different types of crime generally occur and the frequency of it. The table
+            at the bottom is reactive basedd on the last select menu where you can display data for each Precicnt that is within the Borough you selected. Lastly on the population graph
+            tabpanel you can futher compare the crime statistic of each Borough filtering by the same", strong(code("Year")), ",", strong(code("Gender")), ",", strong(code("Age")), ", and," , strong(code("Crime")),
+                                          "using the same controls")
+                               ),
+                               wellPanel(
+                                 p(strong("Summary")),
+                                 p("Taking a look at the Arrest in Borough choropleth map, we can see that most of the arrest (dark red) comes from the Brooklyn and Manhattan with Bronx in first. When zooming into the Precinct level, we see that
+              most of the arrest comes from precinct number 75 in Brooklyn and number 44, 40, and 14 in Manhattan indicating a high level of danger and a need for more resources, policy changes, and caution when roaming those area.
+              Using the population graph panel, we see a more in-depth picture of the individual demographic groups that contributed to the most crimes from each Borough although there are some interesting trends. For example, how 
+              the number of felony seem to stay roughly the same throughout the years in all Borough, indicating some sort of fauly with policies relating to felony type crimes. Last interesting observation was how in 2009, how Brooklyn
+              and Manhattan seemed to have similar number of perpetrators ages 25-44, but Manhattan had a substantially larger population of 45-64 perpetrator, indicating possible differences in how air pollution might affect people of 
+              different age and their tendency to commit crimes")
                                )
                         ),
                         
                         column(8,
-                               p("Note: Items may take up to ten seconds to load."),
                                wellPanel(
                                  tabsetPanel(
-                                   tabPanel("Arrests by Map",
-                                            h4("Prevalence of Crime in an area by Filter", align="center"),
-                                            fluidPage(
+                                   tabPanel("Borough Map",
+                                            h4("NYC Borough Map", align="center"),
+                                            fluidRow(
                                               column(6, plotlyOutput(outputId="precinct_choro_map")),
                                               column(6, plotlyOutput(outputId="borough_choro_map"))
                                             ),
+                                            p("Note: Items may take up to ten seconds to load."),
                                             br(),
+                                            DT::dataTableOutput(outputId="borough_map_table")
                                    ),
-                                   tabPanel("Arrests by Graph",
-                                            h4("Number of Arrests By Location and Filtered Characteristics", align="center"),
+                                   tabPanel("Population Graph",
+                                            h4("Population Graph", align="center"),
                                             plotlyOutput(outputId="population_bar"),
                                             br(),
                                             DT::dataTableOutput(outputId="population_table")
@@ -99,25 +108,94 @@ ui <- fluidPage(
                       ),
              ),
              
-             #------------- Arrests By Season tab -----------------
              
-             tabPanel("Arrests By Season",
+             #--------------- Comparing Borough Mean tab --------------------
+             
+             tabPanel("Air crime trend",
                       fluidRow(
-                        column(3,
+                        column(4,
                                wellPanel(
-                                 selectInput(inputId="selected_borough", "Select Boroughs to include", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
+                                 p(strong("Data Story - why is it important?")),
+                                 p("Moving on to the correlation between air pollutation and crime rates itself, we can use this page to look at the
+                                   trends for each and compare the trends to see if we find a relationship between the ammount of pollutant in the air and the crime rate of each Borough. 
+                                   This is important as it will allow us to determine if there is a connection between air pollution and a person's tendency to commit a crime. This will 
+                                   also allow us to better understand the effects of pollution of the human mind, specifically on the side of it responsible for moral decision making and 
+                                   whether or not long term exposure to pollution will lead to mental problems. It can also create room for dialogue regarding air pollution regulations and 
+                                   coming up with new ways to create more human-friendly air emmissions")
+                               ),
+                               wellPanel(
+                                 selectInput(inputId="borough_first_input", "Select Borough", choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Staten Island"),
+                                 selectInput(inputId="pollutant_input", "Select Pollutant Data to Display", choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected="Fine Particulate Matter (PM2.5)"),
+                                 sliderInput(inputId="borough_year1", "Select Year", 2009, 2020, 2009, sep="")
+                               ),
+                               wellPanel(
+                                 p(strong("How to use filters")),
+                                 p("Using the", code("Select Borough"), "dropdown, you may select the particular Borough you want crime and pollutant data plotted on the same line graph to observe trends for.
+                                   You may also select the type of pollutant using", code("Select pollutant"), "to display the respective data on the graph along with to display on the Borough choropleth map above.
+                                   Lastly, to observe the similarity and differences between high and low pollution and crime areas on the choropleth map over time, you may use the", code("select year"), "slider to select a particular year to display")
+                               ),
+                               wellPanel(
+                                 p(strong("Summary")),
+                                 p("Looking at the choropleth map between the different years, it is clear that the darker areas, corresponding to higher air pollution value and larger crime amount, matches up with one another as time goes on. For exmaple, 
+                                 one of the consistently darker blue area corresponding to high pollution level is Manhattan which also seem to have a consistently high crime rate in comparison to the other Boroughs. Thus, we noted that this may be indication 
+                                 of a positive correlation between air pollution and crime rates. Moving on to the line chart, we yet again see most clearly when filtering the Borough by Staten Island, that the intervals of increases and decreases of both the pollutant 
+                                 value and crime values seem to match up, peaking on 2011 and 2014 while dropping on 2012 and 2015/2016, showing another possible correlation between the two variable")
+                               )
+                        ),
+                        column(8,
+                               wellPanel(
+                                 tabsetPanel(
+                                   tabPanel("Correlation Line",
+                                            fluidRow(
+                                              column(6, plotlyOutput(outputId="first_map")),
+                                              column(6, plotlyOutput(outputId="second_map"))
+                                            ),
+                                            br(),
+                                            plotlyOutput(outputId="first_line")
+                                   )
+                                 )
+                               )
+                        )
+                      )
+             ),
+             
+             #------------- Seasonal crime tab -----------------
+             
+             tabPanel("Seasonal crime",
+                      fluidRow(
+                        column(4,
+                               wellPanel(
+                                 p(strong("Data Story - why is it important?")),
+                                 p("Finally, we can gain more insight on the data by seperating it into Summer and Winter seasons. 
+              By doing so we can look deeper into whether or not the positive correlation between crime and air 
+              pollutant continues even with different warm/cold weathers. This is important as it let us to better 
+              have an picture of what the correlation between crime and air pollution is like, if it is generally more
+              polluted and dangerous during the winters, and it will also allows law enforcement agencies and policymakers better allocate resources and plan for the future to crime 
+              rates by knowing when most likely occurs")
+                               ),
+                               wellPanel(
+                                 selectInput(inputId="selected_borough", "Select Borough", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
                                  selectInput(inputId="selected_pollutant", "Select pollutant to include", multiple=TRUE, choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)")),
                                  selectInput(inputId="selected_crime", "Select crime type to include", multiple=TRUE, choices=c("misdemeanor","felony","violation"), selected=c("misdemeanor","felony","violation"))
                                ),
                                wellPanel(
-                                 p(strong("How to use filters"))
+                                 p(strong("How to use filters")),
+                                 helpText("Using the", code("Select Borough"), "dropdown box, you may select the particular Borough you want to display data for. Then, by clicking the pollutant names in", 
+                                          code("Select pollutant to include"), ", press backspace to remove the pollutant from the graph or re-add the pollutant by pressing on it again. You may also do the same with the",
+                                          code("Select crime type to include"), "box to choose which crime type in order to compare and contrast it with the trends of the pollutant lines over time. To use the scatterplot panel, 
+              you may remove all selection in both the", code("Select pollutant"), "and", code("Select crime"), "box and re-add one type from each to include. Through the plot you may see trends 
+              of those two types with the help of the best fit estimation line")
                                ),
                                wellPanel(
-                                 p(strong("Summary"))
+                                 p(strong("Summary")),
+                                 p("Taking a look at the line graphs, we see no significant differences of values for both crime rate and pollutant ammount between both summer trend and winter trends.  However, we noted that
+            in both summer and winter, the pollutant and crime value seem to follow a downward trend as time goes on. Moreover, we found that the peaks and valleys of the misdemeanor line, in particular,
+            seem to follow the ones for the pollutants, PM2.5 in particular, fairly closely, indicating some sort of positive correlation between air pollution and crime rates in both the summer and winte
+            r seasons. Laslty, in looking at the scatter plot, particularly with PM2.5 and misdemeanor data from the bronx, we yet again see a positive correlation along with the similarity of values between
+            both seasons, indicating no significant differences in seasonal crime and pollution")
                                )
                         ),
-                        column(9,
-                               p("Note: Items may take up to ten seconds to load."),
+                        column(8,
                                wellPanel(
                                  tabsetPanel(
                                    tabPanel("Pollutant trend",
@@ -134,60 +212,13 @@ ui <- fluidPage(
                       )
              ),
              
-             #--------------- Bringing it All Together tab --------------------
+             #----------------- Concluson tab ------------------- 
              
-             tabPanel("Bringing it All Together",
-                      fluidRow(
-                        column(3,
-                               wellPanel(
-                                 p(strong("Data Story - why this is important?")),
-                                 p("This brings us to the conclusion of our analysis. We have found that ", 
-                                   strong("A downwards trend of certain air pollutants over time is correlated with a decrease in criminal activity.")),
-                                 p("With this correlation identified, work can be done to address
-                                   criminal activity by better understanding and mitigating its root causes, notably the health
-                                   of the environments of those living in areas with high arrest rates.")
-                               ),
-                               wellPanel(
-                                 selectInput(inputId="pollutant_input", "Select Pollutant", 
-                                             choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected="Fine Particulate Matter (PM2.5)"),
-                                 
-                                 sliderInput(inputId="borough_year1", "Select Year", 2009, 2020, 2020, sep="")
-                               ),
-                               wellPanel(
-                                 p(strong("How to use filters")),
-                                 p("For the Graph Comparison, select a ", strong(code("Pollutant")), " from the left panel and a ",
-                                   strong(code("Borough")), " from the main page"),
-                                 p("For the Graph Comparison, just select a ", strong(code("Pollutant")), " from the left panel.")
-                               ),
-                               
-                        ),
-                        column(9,
-                               p("Note: Items may take up to ten seconds to load."),
-                               wellPanel(
-                                 tabsetPanel(
-                                   tabPanel("Graph Comparison",
-                                            selectInput(inputId="borough_first_input", "Select Borough", 
-                                                        choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Staten Island"),
-                                            plotlyOutput(outputId="first_line")
-                                   ), 
-                                   
-                                   tabPanel("Map Comparison",
-                                            fluidRow(
-                                              column(6, plotlyOutput(outputId="first_map")),
-                                              column(6, plotlyOutput(outputId="second_map"))
-                                            ),
-                                   ),
-                                 )
-                               )
-                        )
-                      )
-             ),
              
              #------------------- HTML style ---------------------
              
-             tags$head(tags$style(HTML(
-               '.navbar-default .navbar-brand {background-color: #ffb200; color: #FFFFFF}; font-family: Arial;}')))
-             
+             tags$head(tags$style(HTML('.navbar-default .navbar-brand {background-color: #ffb200; color: #FFFFFF}; font-family: Arial;}'))),
+             tags$head(tags$style(HTML('* {font-family: "Arial"};'))),
   )
 )
 
@@ -311,18 +342,16 @@ server <- function(input, output) {
   output$borough_choro_map <- renderPlotly({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
-    borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$value)
-    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + 
-      labs(title="Number of Arrests By Borough", x="Longitude", y="Latitude")
+    borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nCrimes: ", borough_df$value)
+    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + labs(title="Arrest in Borough")
     return(ggplotly(p, tooltip="label"))
   })
   
   output$precinct_choro_map <- renderPlotly({
     precinct_shape <- st_read("nycc.shp")
     precinct_df <- merge(precinct_shape, filt_precinct(), by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
-    precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nValue: ", precinct_df$value)
-    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + 
-      labs(title="Number of Arrests By Precinct", x="Longitude", y="Latitude")
+    precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nCrimes: ", precinct_df$value)
+    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + labs(title=(title="Arrest in Precicnt"))
     return(ggplotly(p, tooltip="label"))
   })
   
@@ -372,7 +401,7 @@ server <- function(input, output) {
   
   winter_borough_data <- reactive({
     data <- melt(filter(df, Borough==input$selected_borough, start_season=="Winter")[, c("Borough", "Year", "Name", "avg_value", "misdemeanor", "felony", "violation")], id.vars=c(1,2,3,4))
-    data <- filter(data, Name%in%input$selected_pollutant)    
+    data <- filter(data, Name%in%input$selected_pollutant, variable%in%input$selected_crime)    
     return(data)
   })
   
@@ -418,16 +447,8 @@ server <- function(input, output) {
   
   output$first_line <- renderPlotly({
     p <- ggplot(pollutant_first_filter(), mapping=aes(x=Year, y=total_crime, col=Borough)) + geom_line(linetype="dashed")
-    p <- p + geom_line(data=pollutant_first_filter(), aes(x=Year, y=avg_value*1000, col=Name)) + 
-      labs(y="Arrests / Parts per Million", title=paste(input$borough_first_input, "Crime and Pollutant rate"))
-    return(p)
-  })
-  
-  
-  output$second_line <- renderPlotly({
-    p <- ggplot(pollutant_second_filter(), mapping=aes(x=Year, y=total_crime, col=Borough)) + geom_line(linetype="dashed")
-    p <- p + geom_line(data=pollutant_second_filter(), aes(x=Year, y=avg_value*1000, col=Name)) + 
-      labs(y="Arrests / Parts per billion", title=paste(input$borough_second_input, "Crime and Pollutant rate"))
+    p <- p + geom_line(data=pollutant_first_filter(), aes(x=Year, y=avg_value*500, col=Name)) + labs(y="Arrests / Parts per Million") +
+      ggtitle(paste(input$borough_first_input, "Crime and Pollutant rate")) + theme(plot.title = element_text(size = 12))
     return(p)
   })
   
@@ -438,32 +459,21 @@ server <- function(input, output) {
     total_sum <- summarize(df_total_grp, across(c(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17), sum))
   })
   
-  # Pollution map
   output$first_map <- renderPlotly({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filter(first_map_filter(), Year==input$borough_year1, Name==input$pollutant_input), by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$avg_value/2)
     p <- ggplot(borough_df) + geom_sf(aes(fill=avg_value, label=Statistics)) + scale_fill_gradient(low = "white", high = "darkblue") + 
-      ggtitle(paste(input$pollutant_input, " By Parts Per Million")) +
-      theme(
-        plot.title = element_text(size = 10),
-        plot.margin = margin(20, 20, 20, 20)
-      )
+      ggtitle(paste(input$pollutant_input, " By Parts Per Million")) + theme(plot.title = element_text(size = 11), plot.margin = margin(20, 20, 20, 20))
     return(ggplotly(p, tooltip="label"))
   })
   
-  # Arrest map
   output$second_map <- renderPlotly({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filter(total_sum, Year==input$borough_year1), by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$total_crime)
     p <- ggplot(borough_df) + geom_sf(aes(fill=total_crime, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") +
-      ggtitle(paste("Number of Arrests")) +
-      theme(
-        plot.title = element_text(size = 10),
-        plot.margin = margin(20, 20, 20, 20)
-      )
-    
+      ggtitle(paste("Number of Arrests")) + theme(plot.title = element_text(size = 11), plot.margin = margin(20, 20, 20, 20))
     return(ggplotly(p, tooltip="label"))
   })
   
