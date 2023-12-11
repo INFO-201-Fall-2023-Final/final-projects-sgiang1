@@ -23,7 +23,7 @@ ui <- fluidPage(
     
     tabPanel("Overview",
       h1(strong("Data Anaylsis of NYC Air Quality and Crime Data")),
-      h2("Our data analysis compares crime statistics to air quality reports by borough in New York City between 2009 and 2020."),
+      h2("Our data analysis compares crime statistics to air quality reports of Boroughs in New York City from 2009 to 2020."),
       br(),
       h4("With this analysis, we plan to evaluate different metrics and present findings related to:"),
       p("- The different types of crime happening in each borough and any yearly increases or decreases seen in the prevalence of different crimes"),
@@ -47,6 +47,9 @@ ui <- fluidPage(
     tabPanel("Borough crime",
       fluidRow(
         column(4,
+          wellPanel(
+            p(strong("Data Story - why is it important?"))
+          ),
           wellPanel(
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
             selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
@@ -102,15 +105,16 @@ ui <- fluidPage(
       fluidRow(
           column(3,
             wellPanel(
+              p(strong("Data Story - why is it important?"))
+            ),
+            wellPanel(
               selectInput(inputId="borough_first_input", "Select First Borough", choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Staten Island"),
               selectInput(inputId="pollutant_input", "Select Pollutant Data to Display", choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected="Fine Particulate Matter (PM2.5)"),
               sliderInput(inputId="borough_year1", "Select Year", 2009, 2020, 2009, sep="")
             ),
             wellPanel(
-              plotlyOutput(outputId="pollutant_map")
-            ),
-            wellPanel(
-              p(strong("How to use filters"))
+              p(strong("How to use filters",
+              ))
             ),
             wellPanel(
               p(strong("Summary"))
@@ -137,6 +141,9 @@ ui <- fluidPage(
     tabPanel("Seasonal crime",
       fluidRow(
         column(3,
+          wellPanel(
+            p(strong("Data Story - why is it important?"))
+          ),
           wellPanel(
             selectInput(inputId="selected_borough", "Select Boroughs to include", multiple=FALSE, choices=c("Bronx","Queens","Staten Island","Brooklyn","Manhattan")),
             selectInput(inputId="selected_pollutant", "Select pollutant to include", multiple=TRUE, choices=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)"), selected=c("Fine Particulate Matter (PM2.5)","Nitrogen Dioxide (NO2)","Ozone (O3)","Sulfur Dioxide (SO2)")),
@@ -173,8 +180,8 @@ ui <- fluidPage(
     
     #------------------- HTML style ---------------------
     
-    tags$head(tags$style(HTML('.navbar-default .navbar-brand {background-color: #ffb200; color: #FFFFFF}; font-family: Arial;}')))
-    
+    tags$head(tags$style(HTML('.navbar-default .navbar-brand {background-color: #ffb200; color: #FFFFFF}; font-family: Arial;}'))),
+    tags$head(tags$style(HTML('* {font-family: "Arial"};'))),
   )
 )
 
@@ -298,16 +305,16 @@ server <- function(input, output) {
   output$borough_choro_map <- renderPlotly({
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filt_borough(), by.x="BoroName", by.y="Borough", all.x=TRUE)
-    borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$value)
-    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red")
+    borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nCrimes: ", borough_df$value)
+    p <- ggplot(borough_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + labs(title="Arrest in Borough")
     return(ggplotly(p, tooltip="label"))
   })
   
   output$precinct_choro_map <- renderPlotly({
     precinct_shape <- st_read("nycc.shp")
     precinct_df <- merge(precinct_shape, filt_precinct(), by.x="precinct", by.y="ARREST_PRECINCT", all.x=TRUE)
-    precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nValue: ", precinct_df$value)
-    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") 
+    precinct_df$Statistics <- paste0("\nPrecinct Number: ", precinct_df$precinct, "\nCrimes: ", precinct_df$value)
+    p <- ggplot(precinct_df) + geom_sf(aes(fill=value, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + labs(title=(title="Arrest in Precicnt"))
     return(ggplotly(p, tooltip="label"))
   })
   
@@ -433,7 +440,7 @@ server <- function(input, output) {
     borough_shape <- st_read("nybb.shp")
     borough_df <- merge(borough_shape, filter(total_sum, Year==input$borough_year1), by.x="BoroName", by.y="Borough", all.x=TRUE)
     borough_df$Statistics <- paste0("\nName: ", borough_df$BoroName, "\nValue: ", borough_df$total_crime)
-    p <- ggplot(borough_df) + geom_sf(aes(fill=total_crime, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red")
+    p <- ggplot(borough_df) + geom_sf(aes(fill=total_crime, label=Statistics)) + scale_fill_gradient(low = "yellow", high = "red") + ggtitle(" ")
     return(ggplotly(p, tooltip="label"))
   })
   
