@@ -43,47 +43,51 @@ ui <- fluidPage(
       img(src="nyc_skyline.jpeg", height="525", width="1530")
     ),
     
-    #---------- Borough crime tab ------------
-    tabPanel("Borough crime",
+    #---------- Arrests By Filter Tab ------------
+    tabPanel("Arrests By Filter",
       fluidRow(
         column(4,
           wellPanel(
             sliderInput(inputId="borough_year", "Select Year", 2009, 2020, 2009, sep=""),
-            selectInput(inputId="select_type", "Select Info Type", c("Gender", "Age", "Crime"), "Gender"),
+            selectInput(inputId="select_type", "Select Type of Information to Filter", c("Gender", "Age", "Crime"), "Gender"),
             uiOutput(outputId="type"),
-            selectInput(inputId="select_borough", "Select Borough", c("Bronx","Queens","Staten Island","Brooklyn","Manhattan"), "Bronx")
           ),
           wellPanel(
-            p(strong("How to use filter")),
-            helpText("Using the slider and selection menus you can", strong(code("filter")), "the crime statistic shown on the map based on the year of observation and demographic of criminal by",
-            strong(code("Gender")), ",", strong(code("Age")), "," , strong(code("Crime Type")), ". ", "You may also", strong(code("hover")), "and", strong(code("zoom in")),
-            "over the map to see specific statistic for each particular Precinct and Borough providing you insight on where different types of crime generally occur and the frequency of it. The table
-            at the bottom is reactive basedd on the last select menu where you can display data for each Precicnt that is within the Borough you selected. Lastly on the population graph
-            tabpanel you can futher compare the crime statistic of each Borough filtering by the same", strong(code("Year")), ",", strong(code("Gender")), ",", strong(code("Age")), ", and," , strong(code("Crime")),
-            "using the same controls")
+            p(strong("Why this is important")),
+            p("With the arrest data filtered by various specifications, we can get a better look
+              at what types of people are ususally arrested, where they are arrested, what types of arrests
+              are happening in a given area at a given time, and the nature of common arrests."),
+            p("When considering the air qualities in these same precincts and boroughs, comparisons can 
+              be made to air quality in a given area and the metrics found in these models.")
           ),
           wellPanel(
-            p(strong("Summary")),
-            p("placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph
-              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph 
-              placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph placeholder paragraph")
+            p(strong("How to use the Filter")),
+            helpText("The slider and buttons above allow you to find the prevalence of Arrests in each Precinct
+                     and borough that fit the given filters. Selecting ", strong(code("Gender > All")), "allows
+                     you to see data for every group in that given year. If you wanted to find only the data for
+                     only misdemeanors in 2016, you could select ", strong(code("Crime > Misdemeanor")), " on the
+                     filter panel and ", strong(code("2016")), " on the slider."),
+            helpText("Please note that the dataset is pretty large, so it may take a few seconds to retrieve the data.
+                     Give it some time!")
           )
         ),
 
         column(8,
           wellPanel(
             tabsetPanel(
-              tabPanel("Borough Map",
-                       h4("NYC Borough Map", align="center"),
+              tabPanel("Arrests by Filter",
+                       h4("Prevalence of Crime in an area by Filter", align="center"),
+                       p("Note: Plot may give an error for the first few seconds white it compiles data.", align="center"),
                        fluidRow(
+                         h5("Arrests by Precinct"),
                          column(6, plotlyOutput(outputId="precinct_choro_map")),
+                         h5("Arrests by Borough"),
                          column(6, plotlyOutput(outputId="borough_choro_map"))
                        ),
                        br(),
-                       DT::dataTableOutput(outputId="borough_map_table")
               ),
-              tabPanel("Population Graph",
-                       h4("Population Graph", align="center"),
+              tabPanel("Arrest",
+                       h4("Number of Arrests By Location and Filtered Characteristics", align="center"),
                        plotlyOutput(outputId="population_bar"),
                        br(),
                        DT::dataTableOutput(outputId="population_table")
